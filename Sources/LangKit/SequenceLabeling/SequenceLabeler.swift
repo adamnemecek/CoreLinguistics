@@ -14,7 +14,7 @@ public protocol SequenceLabelingModel {
     /// Train from tagged corpus
     ///
     /// - parameter taggedCorpus: Tagged corpus [[(w0, t0), (w1, t1), ...], [(w0, t0), (w1, t1), ...], ...]
-    mutating func train<C: Sequence where C.Iterator.Element == [(Item, Label)]>(labeledSequences sequences: C)
+    mutating func train<C: Sequence>(labeledSequences sequences: C) where C.Iterator.Element == [(Item, Label)]
 
     /// Tag a sequence
     ///
