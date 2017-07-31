@@ -10,20 +10,18 @@
 ///
 /// - Leaf: (key, count)
 /// - Node: (key, count, children)
-public enum Trie<K: Hashable> {
+public enum Trie<K: Hashable>: Equatable {
 
-    case leaf(K!, Int)
-    indirect case node(K!, Int, [K: Trie<K>])
+    case leaf(K?, Int)
+    indirect case node(K?, Int, [K: Trie<K>])
 
     public init(initial: [K]? = nil) {
         let base = Trie.leaf(nil, 0)
         self = initial == nil ? base : base.insert(initial!)
     }
 
-}
-
 // MARK: - Equatable conformance
-extension Trie : Equatable {}
+
 
 /// Equate two tries
 /// 
@@ -31,42 +29,19 @@ extension Trie : Equatable {}
 /// - parameter rhs: Trie
 /// 
 /// - returns: Equal or not
-public func ==<K>(lhs: Trie<K>, rhs: Trie<K>) -> Bool {
-    switch (lhs, rhs) {
-    case (.leaf(let k1, let v1), .leaf(let k2, let v2)):
-        return k1 == k2 && v1 == v2
-    case (.node(let k1, let v1, let c1), .node(let k2, let v2, let c2)):
-        return k1 == k2 && v1 == v2 && c1 == c2
-    default:
-        return false
+    static public func ==(lhs: Trie, rhs: Trie) -> Bool {
+        switch (lhs, rhs) {
+        case let (.leaf(k1, v1), .leaf(k2, v2)):
+            return k1 == k2 && v1 == v2
+        case let (.node(k1, v1, c1), .node(k2, v2, c2)):
+            return k1 == k2 && v1 == v2 && c1 == c2
+        default:
+            return false
+        }
     }
 }
 
-/// Match type of two tries
-/// 
-/// - parameter lhs: Trie
-/// - parameter rhs: Trie
-/// 
-/// - returns: Match or not
-public func ~=<K>(lhs: Trie<K>, rhs: Trie<K>) -> Bool {
-    switch (lhs, rhs) {
-    case (.leaf(_, _)   , .leaf(_, _)   ),
-         (.node(_, _, _), .node(_, _, _)):
-        return true
-    default:
-        return false
-    }
-}
 
-/// Combine two tries
-/// 
-/// - parameter lhs: Left trie
-/// - parameter rhs: Rigth trie
-/// 
-/// - returns: New trie
-public func +<K>(lhs: Trie<K>, rhs: Trie<K>) -> Trie<K> {
-    return lhs.unionLeft(rhs)
-}
 
 // MARK: - Insertion
 public extension Trie {
@@ -80,22 +55,22 @@ public extension Trie {
         switch self {
 
         // Base cases
-        case .leaf(let k, let v) where item.isEmpty:
+        case let .leaf(k, v) where item.isEmpty:
             return .leaf(k, v + 1)
 
-        case .node(let k, let v, let children) where item.isEmpty:
+        case let .node(k, v, children) where item.isEmpty:
             return .node(k, v + 1, children)
 
         // Leaf
-        case .leaf(let k, let v):
+        case let .leaf(k, v):
             let nk = item.first!
-            let child = Trie.leaf(nk, 0).insert(!!item.dropFirst(), incrementingNodes: incr)
+            let child = Trie.leaf(nk, 0).insert(Array(item.dropFirst()), incrementingNodes: incr)
             return .node(k, incr ? v + 1 : v, [nk : child])
 
         // Node
         case .node(let k, let v, var children):
             let nk = item.first!
-            let restItem = !!item.dropFirst()
+            let restItem = Array(item.dropFirst())
             // Child exists
             if let child = children[nk] {
                 children[nk] = child.insert(restItem, incrementingNodes: incr)
@@ -109,6 +84,32 @@ public extension Trie {
 
     }
 
+    /// Match type of two tries
+    ///
+    /// - parameter lhs: Trie
+    /// - parameter rhs: Trie
+    ///
+    /// - returns: Match or not
+    public static func ~=(lhs: Trie, rhs: Trie) -> Bool {
+        switch (lhs, rhs) {
+        case (.leaf(_, _)   , .leaf(_, _)   ),
+             (.node(_, _, _), .node(_, _, _)):
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Combine two tries
+    ///
+    /// - parameter lhs: Left trie
+    /// - parameter rhs: Rigth trie
+    ///
+    /// - returns: New trie
+    public static func +(lhs: Trie, rhs: Trie) -> Trie<K> {
+        return lhs.unionLeft(rhs)
+    }
+
 }
 
 // MARK: - Combination
@@ -120,7 +121,7 @@ public extension Trie {
     /// - parameter conflictResolver: Conflict resolving function
     ///
     /// - returns: New trie after union
-    public func union(_ other: Trie<K>, conflictResolver: @noescape (K, K) -> K?) -> Trie<K> {
+    public func union(_ other: Trie, conflictResolver: (K, K) -> K?) -> Trie<K> {
         // TODO
         return self
     }
@@ -131,7 +132,7 @@ public extension Trie {
     /// - parameter other: Other trie
     ///
     /// - returns: New trie after union
-    public func unionLeft(_ other: Trie<K>) -> Trie<K> {
+    public func unionLeft(_ other: Trie) -> Trie<K> {
         return union(other) {left, _ in left}
     }
 
@@ -141,7 +142,7 @@ public extension Trie {
     /// - parameter other: Other trie
     ///
     /// - returns: New trie after union
-    public func unionRight(_ other: Trie<K>) -> Trie<K> {
+    public func unionRight(_ other: Trie) -> Trie<K> {
         return union(other) {_, right in right}
     }
 
@@ -156,7 +157,7 @@ public extension Trie {
     ///
     /// - returns: Exists or not
     public func hasChild(_ key: K) -> Bool {
-        guard case .node(_, _, let children) = self else {
+        guard case let .node(_, _, children) = self else {
             return false // Leaf has no children
         }
         return children.keys.contains(key)
@@ -164,7 +165,7 @@ public extension Trie {
 
     /// Number of children
     public var childCount: Int {
-        guard case .node(_, _, let children) = self else {
+        guard case let .node(_, _, children) = self else {
             return 0 // Leaf has no children
         }
         return children.count
@@ -211,8 +212,8 @@ public extension Trie {
         case .leaf(_, let v):
             return v
         case .node(_, _, let children):
-            let sums = children.values.map{$0.sumLeaves()}
-            return sums.reduce(sums.first!, combine: +)
+            let sums = children.values.map{ $0.sumLeaves() }
+            return sums.reduce(0, +)
         }
     }
 
@@ -221,11 +222,11 @@ public extension Trie {
     /// - returns: Count
     public func sum() -> Int {
         switch self {
-        case .leaf(_, let v):
+        case let .leaf(_, v):
             return v
-        case .node(_, let v, let children):
+        case let .node(_, v, children):
             let sums = children.values.map{$0.sum()}
-            return v + sums.reduce(sums.first!, combine: +)
+            return v + sums.reduce(0, +)
         }
     }
 

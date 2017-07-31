@@ -15,13 +15,13 @@ public extension String.CharacterView {
 
     public func lineSplit() -> [SubSequence] {
         let delimiterSet: Set<Character> = ["\n", "\r"]
-        return split(omittingEmptySubsequences: true, isSeparator: delimiterSet.contains)
+        return split(whereSeparator: delimiterSet.contains)
     }
-
+    
     public func tagSplit(delimiter: Character) -> (String, String) {
         let subseq = split(separator: delimiter)
         guard subseq.count >= 2 else {
-            return (String(subseq.first), unknown)
+            return (String(describing: subseq.first), unknown)
         }
         return (String(subseq[0]), String(subseq[1]))
     }

@@ -19,7 +19,7 @@ public class IBMModel1: Aligner {
 
     let initialTrans: Float = 0.1
 
-    public init<S: Sequence where S.Iterator.Element == SentenceTuple>(bitext: S, probabilityThreshold threshold: Float) {
+    public init<S: Sequence>(bitext: S, probabilityThreshold threshold: Float)  where S.Iterator.Element == SentenceTuple {
         self.trans = [:]
         self.threshold = threshold
         train(bitext: bitext)
@@ -33,7 +33,7 @@ public class IBMModel1: Aligner {
     ///
     /// - parameter bitext:     Parallel corpora
     /// - parameter iterations: Iteration count
-    public func train<S: Sequence where S.Iterator.Element == SentenceTuple>(bitext: S, iterations: Int = 100) {
+    public func train<S: Sequence>(bitext: S, iterations: Int = 100) where S.Iterator.Element == SentenceTuple {
         var count: [Key: Float] = [:]
         var total: [String: Float] = [:]
         var sTotal: [String: Float] = [:]
@@ -51,7 +51,7 @@ public class IBMModel1: Aligner {
                     sTotal[ej] = 0.0
                     for fi in f {
                         let pair: Key = [ej, fi]
-                        sTotal[ej] ?+= trans[pair] ?? initialTrans
+                        sTotal[ej] ?+= (trans[pair]! ?? initialTrans)
                     }
                 }
                 // Collect counts
@@ -60,8 +60,8 @@ public class IBMModel1: Aligner {
                         let pair: Key = [ej, fi]
                         let transProb = trans[pair] ?? initialTrans
                         let ejTotal = sTotal[ej]!
-                        count[pair] ?+= transProb / ejTotal
-                        total[fi] ?+= transProb / ejTotal
+                        count[pair] ?+= (transProb / ejTotal)
+                        total[fi] ?+= (transProb / ejTotal)
                     }
                 }
             }

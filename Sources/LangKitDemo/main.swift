@@ -1,5 +1,5 @@
 import Foundation
-import CommandLine
+import CommandLineKit
 
 // Action table
 let demos: [String: () -> ()] =
@@ -22,7 +22,7 @@ cli.addOptions(nameOption)
 do {
     try cli.parse()
 } catch let error {
-    cli.printUsage(error: error)
+    cli.printUsage(error)
     exit(EXIT_FAILURE)
 }
 

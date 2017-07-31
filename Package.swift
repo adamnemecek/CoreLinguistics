@@ -2,11 +2,6 @@ import PackageDescription
 
 let package = Package(
     name: "LangKit",
-    exclude: ["Documentation", "Build", "Frameworks", "Examples", "LangKit-iOS"],
-    dependencies:
-    [
-        .Package(url: "https://github.com/xinranmsn/CommandLine", majorVersion: 2, minor: 3),
-    ],
     targets:
     [
         Target(
@@ -16,5 +11,12 @@ let package = Package(
             name: "LangKitDemo",
             dependencies: [ "LangKit" ]
         )
-    ]
+    ],
+    dependencies:
+    [
+        .Package(url: "https://github.com/rxwei/CommandLine", majorVersion: 3, minor: 0),
+    ],
+    
+    
+    exclude: ["Documentation", "Build", "Frameworks", "Examples", "LangKit-iOS"]
 )

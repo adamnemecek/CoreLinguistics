@@ -6,11 +6,8 @@
 //
 //
 
-public func ==<Element>(lhs: ArrayKey<Element>, rhs: ArrayKey<Element>) -> Bool {
-    return lhs.hashValue == rhs.hashValue
-}
 
-public struct ArrayKey<Element: Hashable> : Hashable, ArrayLiteralConvertible {
+public struct ArrayKey<Element: Hashable> : Hashable, ExpressibleByArrayLiteral {
 
     private let elements: [Element]
 
@@ -25,6 +22,10 @@ public struct ArrayKey<Element: Hashable> : Hashable, ArrayLiteralConvertible {
 
     public subscript(index: Int) -> Element {
         return elements[index]
+    }
+
+    public static func ==(lhs: ArrayKey, rhs: ArrayKey) -> Bool {
+        return lhs.hashValue == rhs.hashValue
     }
 
 }

@@ -32,9 +32,11 @@ class POSTaggingDemo : Demo {
         // Interactive classification
         while true {
             print("💬  ", terminator: "")
-            readLine() >>- ^String.tokenized >>- tagger.tag >>- { sentence in
+            (((readLine() >>- ^String.tokenized) >>- tagger.tag) >>- { sentence in
                 sentence.map{"\($0)_\($1)"}.joined(separator: " ")
-            } >>- print
+            }) >>- print
+
+
         }
     }
 }

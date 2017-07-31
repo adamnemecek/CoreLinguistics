@@ -15,7 +15,7 @@ import Foundation
 /// - goodTuring:          Good Turing smoothing
 /// - linearInterpolation: Linear interpolation
 /// - absoluteDiscounting: Absolute discounting
-public enum SmoothingMode : NilLiteralConvertible {
+public enum SmoothingMode : ExpressibleByNilLiteral {
     case none
     case laplace(Float)
     case goodTuring

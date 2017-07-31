@@ -8,7 +8,7 @@
 
 import Foundation
 
-public final class ParallelCorpusReader {
+public final class ParallelCorpusReader  : Sequence, IteratorProtocol {
 
     public typealias SentenceTuple = ([String], [String])
 
@@ -16,13 +16,13 @@ public final class ParallelCorpusReader {
 
     public init?(fromFFile fPath: String, fromEFile ePath: String,
                 sentenceSeparator separator: String = "\n",
-                encoding: NSStringEncoding = NSUTF8StringEncoding,
-                tokenizingWith tokenize: String -> [String] = ^String.tokenized) {
+                encoding: String.Encoding = .utf8,
+                tokenizingWith tokenize: @escaping (String) -> [String] = ^String.tokenized) {
         guard let f = TokenCorpusReader(fromFile: fPath,
                                         sentenceSeparator: separator,
                                         encoding: encoding,
                                         tokenizingWith: tokenize),
-                  e = TokenCorpusReader(fromFile: ePath,
+                  let e = TokenCorpusReader(fromFile: ePath,
                                         sentenceSeparator: separator,
                                         encoding: encoding,
                                         tokenizingWith: tokenize) else { return nil }
@@ -30,34 +30,21 @@ public final class ParallelCorpusReader {
         eReader = e
     }
 
-}
 
-// MARK: - State
-extension ParallelCorpusReader {
 
     public func rewind() {
         fReader.rewind()
         eReader.rewind()
     }
 
-}
-
-// MARK: - IteratorProtocol conformance
-extension ParallelCorpusReader : IteratorProtocol {
-
     public typealias Element = SentenceTuple
 
     public func next() -> Element? {
-        guard let fNext = fReader.next(), eNext = eReader.next() else {
+        guard let fNext = fReader.next(), let eNext = eReader.next() else {
             return nil
         }
         return (fNext, eNext)
     }
-
-}
-
-// MARK: - Sequence conformance
-extension ParallelCorpusReader : Sequence {
 
     public typealias Iterator = ParallelCorpusReader
 

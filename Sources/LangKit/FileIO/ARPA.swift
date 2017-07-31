@@ -10,8 +10,8 @@ import Foundation
 
 public extension NgramModel {
 
-    public func writeARPA(toFile path: String, encoding: NSStringEncoding = NSUTF8StringEncoding) {
-        guard let file = NSFileHandle(forWritingAtPath: path) else {
+    public func writeARPA(toFile path: String, encoding: String.Encoding = .utf8) {
+        guard let file = FileHandle(forWritingAtPath: path) else {
             return
         }
         let header = "\\data\\\n"

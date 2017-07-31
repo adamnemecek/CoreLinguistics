@@ -7,17 +7,6 @@
 //
 
 import Foundation
-
-/// Transition conformance to Equatable
-public func ==<T>(lhs: Transition<T>, rhs: Transition<T>) -> Bool {
-    return lhs.state1 == rhs.state1 && lhs.state2 == rhs.state2
-}
-
-/// Emission conformance to Equatable
-public func ==<T, U>(lhs: Emission<T, U>, rhs: Emission<T, U>) -> Bool {
-    return lhs.state == rhs.state && lhs.item == rhs.item
-}
-
 /// Transition hash key
 public struct Transition<T: Hashable> : Hashable {
     public let state1, state2: T
@@ -27,6 +16,11 @@ public struct Transition<T: Hashable> : Hashable {
         self.state2 = state2
         hashValue = 31 &* state1.hashValue &+ state2.hashValue
     }
+
+    static public func ==(lhs: Transition, rhs: Transition) -> Bool {
+        return lhs.state1 == rhs.state1 && lhs.state2 == rhs.state2
+    }
+
 }
 
 /// Emission hash key
@@ -39,10 +33,15 @@ public struct Emission<T: Hashable, U: Hashable> : Hashable {
         self.item = item
         hashValue = 31 &* state.hashValue &+ item.hashValue
     }
+
+    /// Emission conformance to Equatable
+    static public func ==(lhs: Emission, rhs: Emission) -> Bool {
+        return lhs.state == rhs.state && lhs.item == rhs.item
+    }
 }
 
 /// Lazily cached hidden Markov model for sequence labeling
-public final class HiddenMarkovModel<Item: Hashable, Label: Hashable> {
+public final class HiddenMarkovModel<Item: Hashable, Label: Hashable> : SequenceLabelingModel {
 
     public typealias TransitionType = Transition<Label>
     public typealias EmissionType = Emission<Label, Item>
@@ -87,8 +86,8 @@ public final class HiddenMarkovModel<Item: Hashable, Label: Hashable> {
     // Unseen emission count table
     private var unseenEmissionCountTable: [Label: Int] = [:]
     // Good-Turing smoothing -- count frequency tables
-    private var transitionCountFrequency: [Int: Int]!
-    private var   emissionCountFrequency: [Int: Int]!
+    private var transitionCountFrequency: [Int: Int] = [:]
+    private var   emissionCountFrequency: [Int: Int] = [:]
 
 
     /// Initialize from HMM counts
@@ -108,8 +107,8 @@ public final class HiddenMarkovModel<Item: Hashable, Label: Hashable> {
         self.sequenceCount = sequenceCount
         self.threshold = threshold
         self.smoothing = smoothing
-        self.items = emissionCountTable.keys.map{$0.item} |> Set.init
-        self.states = transitionCountTable.keys.flatMap{[$0.state1, $0.state2]} |> Set.init
+        self.items = Set(emissionCountTable.keys.map{ $0.item } )
+        self.states = Set(transitionCountTable.keys.flatMap{ [$0.state1, $0.state2] })
         updateUnseenEmissionCountTable()
         self.transitionCountTable.keys.forEach { self.stateCountTable[$0.state1] ?+= 1 }
 
@@ -117,8 +116,8 @@ public final class HiddenMarkovModel<Item: Hashable, Label: Hashable> {
         if case .goodTuring = smoothing {
             transitionCountFrequency = [:]
             emissionCountFrequency   = [:]
-            transitionCountTable.values.forEach { transitionCountFrequency![$0] ?+= 1 }
-            emissionCountTable.values.forEach   {   emissionCountFrequency![$0] ?+= 1 }
+            transitionCountTable.values.forEach { transitionCountFrequency[$0] ?+= 1 }
+            emissionCountTable.values.forEach   {   emissionCountFrequency[$0] ?+= 1 }
         }
     }
 
@@ -135,17 +134,17 @@ public final class HiddenMarkovModel<Item: Hashable, Label: Hashable> {
         self.emission = emission
         self.threshold = 0
         self.smoothing = .none
-        self.items = emission.keys.map{$0.item} |> Set.init
-        self.states = transition.keys.flatMap{[$0.state1, $0.state2]} |> Set.init
+        self.items = Set(emission.keys.map{$0.item})
+        self.states = Set(transition.keys.flatMap{ [$0.state1, $0.state2] })
     }
 
     /// Initialize from tagged corpus
     ///
     /// - parameter taggedCorpus: Tagged corpus
-    public init<C : Sequence where C.Iterator.Element == [(Item, Label)]>
+    public init<C : Sequence>
                 (taggedCorpus corpus: C,
                  smoothingMode smoothing: SmoothingMode = .none,
-                 replacingItemsFewerThan threshold: Int = 0) {
+                 replacingItemsFewerThan threshold: Int = 0)  where C.Iterator.Element == [(Item, Label)] {
         self.threshold = threshold
         self.smoothing = smoothing
         self.items = []
@@ -157,10 +156,6 @@ public final class HiddenMarkovModel<Item: Hashable, Label: Hashable> {
         train(labeledSequences: corpus)
     }
 
-}
-
-// MARK: - Probability functions. Cache *mutating*
-extension HiddenMarkovModel {
 
     public func initialProbability(state: Label) -> Float {
         // Lookup cache
@@ -250,10 +245,6 @@ extension HiddenMarkovModel {
         return prob
     }
 
-}
-
-// MARK: - Preprocessing
-extension HiddenMarkovModel {
 
     ///	Update unseen (<unk>) emission count table
     /// Called whenever counts are updated
@@ -268,17 +259,14 @@ extension HiddenMarkovModel {
         }
     }
 
-}
 
-// MARK: - SequenceLabelingModel conformance
-extension HiddenMarkovModel : SequenceLabelingModel {
 
     /// Train the model with tagged corpus
     /// Available for incremental training
     /// Complexity: O(n^2)
     /// 
     /// - parameter taggedCorpus: Tagged corpus
-    public func train<C : Sequence where C.Iterator.Element == [(Item, Label)]>(labeledSequences corpus: C) {
+    public func train<C : Sequence>(labeledSequences corpus: C) where C.Iterator.Element == [(Item, Label)] {
         for sentence in corpus {
             // Add initial
             let (_, head) = sentence[0]
@@ -347,13 +335,9 @@ extension HiddenMarkovModel : SequenceLabelingModel {
     /// - returns: Tagged sentence [(w0, t0), (w1, t1), (w2, t2), ...]
     public func tag(_ sequence: [Item]) -> [(Item, Label)] {
         let (_, labels) = viterbi(observation: sequence)
-        return !!zip(sequence, labels)
+        return Array(zip(sequence, labels))
     }
 
-}
-
-// MARK: - Algorithms
-extension HiddenMarkovModel {
     /// Viterbi Algorithm - Find the most likely sequence of hidden states
     /// A nasty implementation directly ported from Python version (needs rewriting)
     /// Complexity: O(n * |S|^2)   where S = state space
@@ -368,7 +352,9 @@ extension HiddenMarkovModel {
         var trellis : [[Label: Float]] = [[:]]
         var path: [Label: [Label]] = [:]
         for y in states {
-            trellis[0][y] = -logf(initialProbability(state: y)) - logf(emissionProbability(Emission(y, observation[0])))
+
+            let em = Emission(y, observation[0])
+            trellis[0][y] = -logf(initialProbability(state: y)) - logf(emissionProbability(em))
             path[y] = [y]
         }
         for i in 1..<observation.count {
@@ -376,11 +362,11 @@ extension HiddenMarkovModel {
             var newPath: [Label: [Label]] = [:]
             for y in states {
                 var bestArg: Label = states.first!
-                var bestProb: Float = Float.infinity
+                var bestProb: Float = .infinity
                 for y0 in states {
                     let prob = trellis[i-1][y0]! -
-                                (transitionProbability(Transition(y0, y)) |> logf) -
-                                (emissionProbability(Emission(y, observation[i])) |> logf)
+                        (transitionProbability(Transition(y0, y)) |> logf) -
+                        (emissionProbability(Emission(y, observation[i])) |> logf)
                     if prob < bestProb {
                         bestArg = y0
                         bestProb = prob
@@ -392,10 +378,12 @@ extension HiddenMarkovModel {
             path = newPath
         }
         let n = observation.count - 1
-        var bestArg: Label!, bestProb: Float = Float.infinity
-        for y in states where trellis[n][y] < bestProb {
-            bestProb = trellis[n][y]!
-            bestArg = y
+        var bestArg: Label!, bestProb: Float = .infinity
+        for y in states {
+            if let prob = trellis[n][y], prob < bestProb {
+                bestProb = trellis[n][y]!
+                bestArg = y
+            }
         }
         return (probability: bestProb, label: path[bestArg]!)
     }

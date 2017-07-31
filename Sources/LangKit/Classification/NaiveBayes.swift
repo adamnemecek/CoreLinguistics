@@ -6,14 +6,14 @@
 //
 //
 
-public struct NaiveBayes<Input, Label: Hashable> {
+public struct NaiveBayes<Input, Label: Hashable> : Classifier {
 
-    public typealias ProbabilityFunction = Input -> Float
+    public typealias ProbabilityFunction = (Input) -> Float
 
     private var probabilityFunctions: [Label: ProbabilityFunction] = [:]
 
     public var classes: [Label] {
-        return !!probabilityFunctions.keys
+        return Array(probabilityFunctions.keys)
     }
 
     public var flipped: Bool
@@ -23,25 +23,20 @@ public struct NaiveBayes<Input, Label: Hashable> {
         self.flipped = flipped
     }
 
-    public init<T: LanguageModel where T.Sentence == Input>(languageModels: [Label: T], flipped: Bool = false) {
+    public init<T: LanguageModel>(languageModels: [Label: T], flipped: Bool = false) where T.Sentence == Input {
         var lms: [Label: ProbabilityFunction] = [:]
         languageModels.forEach { lms[$0] = $1.sentenceLogProbability }
         self.init(probabilityFunctions: lms, flipped: flipped)
     }
 
-}
 
-extension NaiveBayes {
 
-    public mutating func add(classLabel: Label, probabilityFunction probFunc: ProbabilityFunction) {
+    public mutating func add(classLabel: Label, probabilityFunction probFunc: @escaping ProbabilityFunction) {
         if !probabilityFunctions.keys.contains(classLabel)  {
             probabilityFunctions[classLabel] = probFunc
         }
     }
 
-}
-
-extension NaiveBayes : Classifier {
 
     public func classify(_ input: Input) -> Label? {
         return (flipped ? argmin : argmax)(Array(probabilityFunctions.keys)) {

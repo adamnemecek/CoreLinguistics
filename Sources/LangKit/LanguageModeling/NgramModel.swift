@@ -9,7 +9,7 @@
 import Foundation
 
 
-public struct NgramModel {
+public struct NgramModel : LanguageModel {
 
     // Token type
     public typealias Token = String
@@ -63,10 +63,6 @@ public struct NgramModel {
         corpus >>- { self.train(corpus: $0) }
     }
 
-}
-
-// MARK: - Mutation
-extension NgramModel {
 
     ///	Insert an ngram
     ///
@@ -87,11 +83,6 @@ extension NgramModel {
         }
     }
 
-}
-
-// MARK: - Smoothing utilities
-extension NgramModel {
-
     /// Smooth Ngram based on the smoothing method
     ///
     /// - parameter ngram: Ngram item
@@ -101,7 +92,7 @@ extension NgramModel {
         // 'Unk'ify (preprocess)
         let unkedNgram = ngram.map { tokens.contains($0) ? $0 : unknown }
 
-        let pregram = !!ngram.dropLast()
+        let pregram = Array(ngram.dropLast())
         let last = ngram.last!
 
         if !counter.contains(ngram: pregram) {
@@ -112,16 +103,13 @@ extension NgramModel {
         return unkedNgram
     }
 
-}
 
-// MARK: - LanguageModel conformance
-extension NgramModel : LanguageModel {
 
     /// Train the model with tokenized corpus
     ///
     /// - parameter corpus: Tokenized corpus
-    public mutating func train<C: Sequence where C.Iterator.Element == [Token]>
-                               (corpus: C) {
+    public mutating func train<C: Sequence>
+                               (corpus: C) where C.Iterator.Element == [Token] {
         let corpus = corpus.replaceRareTokens(minimumCount: threshold)
         for sentence in corpus {
             // Wrap <s> and </s> symbols
@@ -173,7 +161,7 @@ extension NgramModel : LanguageModel {
     public func markovProbability(_ item: Item) -> Float {
         // Ngram and pregram ({N-1}gram)
         let ngram = smoothNgram(item)
-        let pregram = !!ngram.dropLast()
+        let pregram = Array(ngram.dropLast())
 
         // Count and precount smoothing
         let count = counter[ngram] |> { $0 == 0 ? 1 : $0 }
@@ -214,7 +202,7 @@ extension NgramModel : LanguageModel {
     /// - returns: Log probability
     public func sentenceLogProbability(_ sentence: Sentence) -> Float {
         return sentence.wrapSentenceBoundary().ngrams(n)
-            .reduce(0, combine: (+) • logf • markovProbability)
+            .reduce(0, ((+) • (logf • markovProbability)))
     }
 
 }

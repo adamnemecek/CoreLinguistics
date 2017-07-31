@@ -35,8 +35,8 @@ public final class ClassifierEvaluator<C: Classifier> {
     ///  - parameter solutions:  Array of golden standard outputs
     public init<T: Sequence, U: Sequence where T.Iterator.Element == C.Input, U.Iterator.Element == C.Label>
                 (classifier: C, tests: T, solutions: U) {
-        self.tests = !!tests
-        self.solutions = !!solutions
+        self.tests = Array(tests)
+        self.solutions = Array(solutions)
         self.classifier = classifier
     }
 
@@ -57,7 +57,7 @@ public final class ClassifierEvaluator<C: Classifier> {
         var scores: [C.Label: FScore] = [:]
         classifier.classes.forEach { label in
             let truePositive = matrix[label]![label] ?? 0
-            let totalGold = matrix[label]!.values.reduce(0, combine: +)
+            let totalGold = matrix[label]!.values.reduce(0, +)
             let totalPredicted = matrix.values.reduce(0) { $0 + ($1[label] ?? 0) }
             scores[label] = FScore(precision: Float(truePositive) / Float(totalPredicted),
                                       recall: Float(truePositive) / Float(totalGold),

@@ -12,12 +12,12 @@ import Foundation
 /// An Item is the smallest unit in a sentence, eg. a token
 /// A corpus has form
 ///   [[Item, Item, Item, ...], [Item, Item, Item, ...], ...]
-public class CorpusReader<Item> {
+public class CorpusReader<Item> : IteratorProtocol {
 
     public typealias Sentence = [Item]
 
     // Tokenization function
-    private var tokenize: String -> [Item]
+    private var tokenize: (String) -> [Item]
 
     // Line reader
     public let reader: LineReader
@@ -29,8 +29,8 @@ public class CorpusReader<Item> {
     /// - parameter encoding:          File encoding (default: UTF-8)
     /// - parameter tokenizingWith:    Tokenization function :: String -> [String] (default: String.tokenize)
     public required init?(fromFile path: String, sentenceSeparator: String = "\n",
-                          encoding: NSStringEncoding = NSUTF8StringEncoding,
-                          tokenizingWith tokenize: String -> [Item]) {
+                          encoding: String.Encoding = .utf8,
+                          tokenizingWith tokenize: @escaping (String) -> [Item]) {
         guard let reader = LineReader(fromFile: path, lineSeparator: sentenceSeparator, encoding: encoding) else {
             return nil
         }
@@ -43,9 +43,7 @@ public class CorpusReader<Item> {
         reader.rewind()
     }
 
-}
 
-extension CorpusReader : IteratorProtocol {
 
     public typealias Elememnt = Sentence
 
@@ -73,7 +71,7 @@ extension CorpusReader : Sequence {
 }
 
 public final class TokenCorpusReader : CorpusReader<String> {
-
+    public typealias Item = String
     /// Initialize from file
     ///
     /// - parameter fromFile:          File path
@@ -82,9 +80,9 @@ public final class TokenCorpusReader : CorpusReader<String> {
     /// - parameter tokenizingWith:    Tokenization function :: String -> [String] (default: String.tokenize)
     public required init?(fromFile path: String,
                  sentenceSeparator: String = "\n",
-                 encoding: NSStringEncoding = NSUTF8StringEncoding,
-                 tokenizingWith tokenize: String -> [String] = ^String.tokenized) {
+                 encoding: String.Encoding = .utf8,
+                 tokenizingWith tokenize: @escaping (String) -> [String] = ^String.tokenized) {
         super.init(fromFile: path, sentenceSeparator: sentenceSeparator, encoding: encoding, tokenizingWith: tokenize)
     }
-
+  
 }

@@ -22,7 +22,7 @@ class LanguageIDDemo: Demo {
     /// - returns: Corpora array
     static func readCorpora(fromFiles files: [String]) -> [CorpusReader<String>] {
         let readers = files.map { TokenCorpusReader(fromFile: $0,
-                                                    encoding: NSISOLatin1StringEncoding,
+                                                    encoding: String.Encoding.isoLatin1,
                                                     tokenizingWith: ^String.tokenized) }
         return readers.map {
             guard let corpus = $0 else {
@@ -33,7 +33,7 @@ class LanguageIDDemo: Demo {
         }
     }
 
-    static func probabilityFunction(fromCorpus corpus: CorpusReader<String>) -> [String] -> Float {
+    static func probabilityFunction(fromCorpus corpus: CorpusReader<String>) -> ([String]) -> Float {
         return NgramModel(n: 2,
                           trainingCorpus: corpus,
                           smoothingMode: .goodTuring,
@@ -49,7 +49,7 @@ class LanguageIDDemo: Demo {
         print("☢️  Training...")
 
         // Create and train bigram models
-        let classes : [String: [String] -> Float] =
+        let classes : [String: ([String]) -> Float] =
             [ "🌐  English": corpora[0] |> probabilityFunction,
               "🌐  French" : corpora[1] |> probabilityFunction,
               "🌐  Italian": corpora[2] |> probabilityFunction ]
@@ -67,7 +67,7 @@ class LanguageIDDemo: Demo {
         while true {
             // Input
             print("💬  ", terminator: "")
-            readLine() >>- ^String.tokenized >>- classifier.classify >>- print
+            ((readLine() >>- ^String.tokenized) >>- classifier.classify) >>- print
         }
     }
 }

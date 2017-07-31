@@ -18,7 +18,7 @@ public protocol Aligner {
     /// Train model iteratively
     ///
     /// - parameter iterations: number of iterations of EM algorithm
-    func train<S: Sequence where S.Iterator.Element == SentenceTuple>(bitext: S, iterations: Int)
+    func train<S: Sequence>(bitext: S, iterations: Int) where S.Iterator.Element == SentenceTuple
 
     /// Align two sentences
     ///
@@ -37,11 +37,11 @@ extension Aligner {
     ///	- parameter bitext:	Parallel corpora
     ///
     ///	- returns: Corpus of alignment index tuples
-    public func alignmentIndices<S: Sequence where S.Iterator.Element == SentenceTuple>(bitext: S) -> [[(Int, Int)]] {
+    public func alignmentIndices<S: Sequence>(bitext: S) -> [[(Int, Int)]] where S.Iterator.Element == SentenceTuple {
         var indices: [[(Int, Int)]] = []
         for (f, e) in bitext {
             let alignment = align(fSentence: f, eSentence: e)
-            indices.append(alignment.sorted(isOrderedBefore: {$0.0 < $1.0}).map{$0})
+            indices.append(alignment.sorted(by: <))
         }
         return indices
     }

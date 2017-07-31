@@ -17,14 +17,6 @@ class OperatorTests: XCTestCase {
         XCTAssertEqual(tokenizer(str), ["Hello", "world", "!"])
     }
 
-    func testGenerate() {
-        let xx = [1, 2, 3, 4, 5]
-        XCTAssertEqual(!!xx, xx)
-
-        let xxSequence = (1...5)
-        XCTAssertEqual(!!xxSequence, xx)
-    }
-
     func testOptionalArithmeticAssignment() {
         var dict = ["foo": 0, "bar": 1]
         dict["foo"] ?+= 1

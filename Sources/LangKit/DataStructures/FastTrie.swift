@@ -7,11 +7,11 @@
 //
 
 /// Fast mutable trie
-public struct FastTrie<K: Hashable> {
+public struct FastTrie<K: Hashable>: Equatable {
     private var key: K!
     private var count: Int = 0
     public private(set) var value: Float?
-    public private(set) var children: [K: FastTrie<K>]?
+    public private(set) var children: [K: FastTrie<K>]
     public private(set) var isLeaf: Bool = true
 
     /// Initialize leaf
@@ -20,28 +20,23 @@ public struct FastTrie<K: Hashable> {
                 value: Float? = nil,
                 incrementingNodes incrementing: Bool = false) {
         self.key = rootKey
-        if let initialItem = initialItem {
-            self.insert(initialItem, value: value, incrementingNodes: incrementing)
+        self.children = [:]
+        initialItem.map {
+            self.insert($0, value: value, incrementingNodes: incrementing)
         }
     }
-}
 
-// MARK: - Equatable conformance
-extension FastTrie : Equatable {}
+//    static private func ==(lhs: [K: FastTrie], rhs: [K: FastTrie]) -> Bool {
+//        return lhs == rhs
+//    }
 
-private func ==<T>(lhs: [T: FastTrie<T>]?, rhs: [T: FastTrie<T>]?) -> Bool {
-    return lhs == rhs
-}
+    static public func ==(lhs: FastTrie, rhs: FastTrie) -> Bool {
+        return lhs.key == rhs.key
+            && lhs.count == rhs.count
+            && lhs.children == rhs.children
+            && lhs.isLeaf == rhs.isLeaf
+    }
 
-public func ==<T>(lhs: FastTrie<T>, rhs: FastTrie<T>) -> Bool {
-    return lhs.key == rhs.key
-        && lhs.count == rhs.count
-        && lhs.children == rhs.children
-        && lhs.isLeaf == rhs.isLeaf
-}
-
-// MARK: - Insertion
-public extension FastTrie {
 
     public mutating func insert(_ item: [K], value: Float? = nil, incrementingNodes incrementing: Bool) {
         // Base case
@@ -52,7 +47,7 @@ public extension FastTrie {
         }
 
         let nk = item.first!
-        let restItem = !!item.dropFirst()
+        let restItem = Array(item.dropFirst())
         if incrementing { count += 1 }
 
         if isLeaf {
@@ -63,20 +58,15 @@ public extension FastTrie {
 
         // Node
         // Child exists
-        if let _ = children?[nk] {
-            children![nk]!.insert(restItem, value: value, incrementingNodes: incrementing)
+        if let _ = children[nk] {
+            children[nk]!.insert(restItem, value: value, incrementingNodes: incrementing)
         }
 
         // Child does not exist. Call insert on a new leaf
         else {
-            children![nk] = FastTrie(rootKey: nk, inserting: restItem, value: value, incrementingNodes: incrementing)
+            children[nk] = FastTrie(rootKey: nk, inserting: restItem, value: value, incrementingNodes: incrementing)
         }
     }
-
-}
-
-// MARK: - Query
-public extension FastTrie {
 
     public func count(_ item: [K] = []) -> Int {
         // Base case
@@ -85,10 +75,10 @@ public extension FastTrie {
         }
 
         let nk = item.first!
-        guard let child = children?[nk] else {
+        guard let child = children[nk] else {
             return 0
         }
-        return child.count(!!item.dropFirst())
+        return child.count(Array(item.dropFirst()))
     }
 
     public func search(_ item: [K] = []) -> Float? {
@@ -97,10 +87,10 @@ public extension FastTrie {
             return value
         }
         let nk = item.first!
-        guard let child = children?[nk] else {
+        guard let child = children[nk] else {
             return 0
         }
-        return child.search(!!item.dropFirst())
+        return child.search(Array(item.dropFirst()))
     }
 
 }

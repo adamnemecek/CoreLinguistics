@@ -46,7 +46,7 @@ public final class IBMModel2 : IBMModel1 {
                       (bitext: S, lexicalIterations m1Iterations: Int, alignmentIterations m2Iterations: Int) {
         // Argument `bitext` as a Sequence will be potentially desructively iterated twice
         // So we want to convert it to a collection
-        let bitext = !!bitext
+        let bitext = Array(bitext)
 
         // Train Model 1 (super)
         super.train(bitext: bitext, iterations: m1Iterations)

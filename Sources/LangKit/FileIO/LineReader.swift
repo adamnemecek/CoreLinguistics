@@ -8,15 +8,15 @@
 
 import Foundation
 
-public final class LineReader {
+public final class LineReader : IteratorProtocol, Sequence {
 
     // Chunk size constant
     private let chunkSize = 4096
 
     private let path: String
-    private let encoding: NSStringEncoding
+    private let encoding: String.Encoding
     private let lineSeparator: String
-    private let fileHandle: NSFileHandle
+    private let fileHandle: FileHandle
     private let buffer: NSMutableData
     private let delimiterData: NSData
 
@@ -29,10 +29,10 @@ public final class LineReader {
     /// - parameter lineSeparator:     Line separator (default: "\n")
     /// - parameter encoding:          File encoding (default: UTF-8)
     public required init?(fromFile path: String, lineSeparator: String = "\n",
-                          encoding: NSStringEncoding = NSUTF8StringEncoding) {
-        guard let handle = NSFileHandle(forReadingAtPath: path),
-                  delimiterData = lineSeparator.data(using: encoding),
-                  buffer = NSMutableData(capacity: chunkSize) else {
+                          encoding: String.Encoding = .utf8) {
+        guard let handle = FileHandle(forReadingAtPath: path),
+                  let delimiterData = lineSeparator.data(using: encoding),
+                  let buffer = NSMutableData(capacity: chunkSize) else {
             return nil
         }
         self.path = path
@@ -40,7 +40,7 @@ public final class LineReader {
         self.lineSeparator = lineSeparator
         self.fileHandle = handle
         self.buffer = buffer
-        self.delimiterData = delimiterData
+        self.delimiterData = delimiterData as NSData
     }
 
     deinit {
@@ -59,10 +59,6 @@ public final class LineReader {
         eof = false
     }
 
-}
-
-extension LineReader : IteratorProtocol {
-
     public typealias Element = String
 
     /// Next line
@@ -73,16 +69,17 @@ extension LineReader : IteratorProtocol {
             return nil
         }
 
-        var range = buffer.range(of: delimiterData, options: [], in: NSMakeRange(0, buffer.length))
+        var range = buffer.range(of: delimiterData as Data, options: [], in: NSMakeRange(0, buffer.length))
 
         while range.location == NSNotFound {
             let data = fileHandle.readData(ofLength: chunkSize)
-            guard data.length > 0 else {
+            guard data.count > 0 else {
                 eof = true
                 return nil
             }
+
             buffer.append(data)
-            range = buffer.range(of: delimiterData, options: [], in: NSMakeRange(0, buffer.length))
+            range = buffer.range(of: delimiterData as Data, options: [], in: NSMakeRange(0, buffer.length))
         }
 
         let line = String(data: buffer.subdata(with: NSMakeRange(0, range.location)), encoding: encoding)
@@ -91,9 +88,9 @@ extension LineReader : IteratorProtocol {
         return line
     }
 
-}
 
-extension LineReader : Sequence {
+
+
 
     public typealias Iterator = LineReader
 

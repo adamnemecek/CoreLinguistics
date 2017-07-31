@@ -48,15 +48,24 @@ public struct TrieNgramCounter : NgramCounter {
         return trie.count
     }
     
-}
 
-private func ==(lhs: DictionaryNgramCounter.NgramKey, rhs: DictionaryNgramCounter.NgramKey) -> Bool {
-    return lhs.hashValue == rhs.hashValue
 }
 
 public struct DictionaryNgramCounter : NgramCounter {
 
-    private struct NgramKey: Hashable  {
+    fileprivate struct NgramKey: Hashable  {
+        /// Returns a Boolean value indicating whether two values are equal.
+        ///
+        /// Equality is the inverse of inequality. For any values `a` and `b`,
+        /// `a == b` implies that `a != b` is `false`.
+        ///
+        /// - Parameters:
+        ///   - lhs: A value to compare.
+        ///   - rhs: Another value to compare.
+        static func ==(lhs: NgramKey, rhs: NgramKey) -> Bool {
+            return  lhs.hashValue == rhs.hashValue && lhs.ngram == rhs.ngram
+        }
+
         let ngram: [String]
         let hashValue: Int
         init(_ ngram: [String]) {
@@ -84,7 +93,7 @@ public struct DictionaryNgramCounter : NgramCounter {
 
     public mutating func insert(_ ngram: [String]) {
         let key = NgramKey(ngram)
-        let pregramKey = NgramKey(!!ngram.dropLast())
+        let pregramKey = NgramKey(Array(ngram.dropLast()))
         table[key] ?+= 1
         backoffTable[pregramKey] ?+= 1
         total += 1

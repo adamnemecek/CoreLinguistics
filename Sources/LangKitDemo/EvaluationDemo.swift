@@ -20,7 +20,7 @@ class EvaluationDemo: Demo {
     /// - returns: Corpora array
     static func readCorpus(fromFile path: String) -> CorpusReader<String> {
         guard let reader = TokenCorpusReader(fromFile: path,
-                                             encoding: NSISOLatin1StringEncoding,
+                                             encoding: String.Encoding.isoLatin1,
                                              tokenizingWith: ^String.tokenized) else {
             print("❌  Corpora error!")
             exit(EXIT_FAILURE)
@@ -37,7 +37,7 @@ class EvaluationDemo: Demo {
     }
 
     static func average(_ numbers: [Float]) -> Float {
-        return numbers.reduce(0.0, combine: +) / Float(numbers.count)
+        return numbers.reduce(0, +) / Float(numbers.count)
     }
 
     /// Run demo
@@ -60,9 +60,9 @@ class EvaluationDemo: Demo {
         let classifier: NaiveBayes<[String], String> = NaiveBayes(languageModels: models)
 
         guard let solutions = LineReader(fromFile: "Data/Demo/LanguageModeling/LangId.sol",
-                                         encoding: NSISOLatin1StringEncoding),
-                      tests = CorpusReader(fromFile: "Data/Demo/LanguageModeling/LangId.test",
-                                           encoding: NSISOLatin1StringEncoding,
+                                         encoding: String.Encoding.isoLatin1),
+                      let tests = CorpusReader(fromFile: "Data/Demo/LanguageModeling/LangId.test",
+                                           encoding: String.Encoding.isoLatin1,
                                            tokenizingWith: ^String.tokenized) else {
             print("Error opening tests and solutions")
             exit(EXIT_FAILURE)
